@@ -37,7 +37,7 @@ int sb_append(strbuf_t *L, char item)
 	size_t size = L->length * 2;
 	char *p = realloc(L->data, sizeof(char) * size);
 	if (!p) return 1;
-    //yo
+    
 	L->data = p;
 	L->length = size;
 
@@ -63,7 +63,7 @@ int wordWrap(int width, int fd, int fw){
         //after buf is loaded with words start wrapping 
         for(int i = 0; i < width; i++){
             strbuf_t word;
-            sb_init(word,width);
+            sb_init(word, width);
             size_t nByteswrite;
             //keeps track of the 
             int lTrack = 0;
@@ -73,10 +73,10 @@ int wordWrap(int width, int fd, int fw){
                 if(word.used != 1){
                     //get the len of the word to write
                     nByteswrite = word.used - 1;
-                    write(fw," ",1);
+                    write(fw, " ", 1);
                     lTrack++;
                     //write the word to the file after end
-                    write(fw,word,nByteswrite);
+                    write(fw, word, nByteswrite);
                     //free the word once eneded
                     sb_destroy(&word);
                 }
@@ -88,12 +88,11 @@ int wordWrap(int width, int fd, int fw){
             }
             else{
                 //means the word is in process of making, so keep adding it 
-                sb_append(&word,buf[i]);
+                sb_append(&word, buf[i]);
                 lTrack++;
             }
             
         }
     }
-    
 
 }
