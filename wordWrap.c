@@ -65,6 +65,7 @@ int wordWrap(int width, int fd, int fw){
             strbuf_t word;
             sb_init(word,width);
             size_t nByteswrite;
+            //keeps track of the length
             int lTrack = 0;
             //when the word is a space it is either the begining or the end of the word 
             if(isspace(buf[i]){
@@ -72,11 +73,18 @@ int wordWrap(int width, int fd, int fw){
                 if(word.used != 1){
                     //get the len of the word to write
                     nByteswrite = word.used - 1;
+                    write(fw," ",1);
+                    lTrack++;
                     //write the word to the file after end
                     write(fw,word,nByteswrite);
                     //free the word once eneded
                     sb_destroy(&word);
                 }
+                else
+                {
+                    //do nothing
+                }
+                
             }
             else{
                 //means the word is in process of making, so keep adding it 
