@@ -37,7 +37,7 @@ int sb_append(strbuf_t *L, char item)
 	size_t size = L->length * 2;
 	char *p = realloc(L->data, sizeof(char) * size);
 	if (!p) return 1;
-
+    //yo
 	L->data = p;
 	L->length = size;
 
