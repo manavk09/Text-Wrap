@@ -60,7 +60,7 @@ int wordWrap(int width, int fd, int fw){
     size_t bytesRead = width;
     //start reading the file 
     while(nBytesread = read(fd, buf, bytesRead) != -1){
-        //after buf if loaded with words start wrapping 
+        //after buf is loaded with words start wrapping 
         for(int i = 0; i < width; i++){
             strbuf_t word;
             sb_init(word,width);
