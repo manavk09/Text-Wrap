@@ -59,13 +59,13 @@ int wordWrap(int width, int fd, int fw){
     size_t nBytesread;
     size_t bytesRead = width;
     //start reading the file 
-    while(nBytesread = read(fd, buf, bytesRead) != -1){
+    while((nBytesread = read(fd, buf, bytesRead))!= -1){
         //after buf is loaded with words start wrapping 
         for(int i = 0; i < width; i++){
             strbuf_t word;
             sb_init(word,width);
             size_t nByteswrite;
-            //keeps track of the length
+            //keeps track of the 
             int lTrack = 0;
             //when the word is a space it is either the begining or the end of the word 
             if(isspace(buf[i]){
