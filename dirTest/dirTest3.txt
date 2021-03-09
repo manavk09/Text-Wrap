@@ -1,0 +1,3 @@
+The quick     brown fox jumps
+over the            lazy dog
+There's a bunch of spaces before the word lazy and brown
