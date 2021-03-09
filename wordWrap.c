@@ -200,6 +200,7 @@ int wordWrap(int width, int fr, int fw){
     return 1;
 
 }
+
 int directoryAccess(char dirName[], int width){
     DIR *dir;
     dir = opendir(dirName);
