@@ -171,7 +171,7 @@ int wordWrap(int width, int fr, int fw){
     return 1;
 
 }
-int directoryAccess(char dirName, int width){
+int directoryAccess(char dirName[], int width){
     DIR *dir;
     dir = opendir(dirName);
     if(dir == NULL){
@@ -181,10 +181,18 @@ int directoryAccess(char dirName, int width){
 
     //start reading the dir
     while((sd = readdir (dir)) != NULL){
-        int fr = open(sd->d_name, O_RDONLY);
-        //create the file name
+        char temp1[100];
         char *name = sd->d_name;
+        strcat(temp1,"./");
+        strcat(temp1, dirName);
+        strcat(temp1,"/");
+        strcat(temp1,name);
+        int fr = open(temp1, O_RDONLY);
+        //create the file name
         char temp[100];
+        strcat(temp, "./");
+        strcat(temp, dirName);
+        strcat(temp,"/");
         strcat(temp,"wrap.");
         strcat(temp,name);
         int fw = open(temp, O_WRONLY, O_CREAT);
