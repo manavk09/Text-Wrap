@@ -24,7 +24,7 @@ int sb_init(strbuf_t *L, size_t length)
 
     L->length = length;
     L->used  = 1;
-    L->data[L->used] = '\0';
+    L->data[0] = '\0';
 
     return 0;
 }
@@ -38,14 +38,14 @@ void sb_destroy(strbuf_t *L)
 int sb_append(strbuf_t *L, char item)
 {
     if (L->used == L->length) {
-	size_t size = L->length * 2;
-	char *p = realloc(L->data, sizeof(char) * size);
-	if (!p) return 1;
-    
-	L->data = p;
-	L->length = size;
+        size_t size = L->length * 2;
+        char *p = realloc(L->data, sizeof(char) * size);
+        if (!p) return 1;
+        
+        L->data = p;
+        L->length = size;
 
-	if (DEBUG) printf("Increased size to %lu\n", size);
+        if (DEBUG) printf("Increased size to %lu\n", size);
     }
 
     L->data[L->used-1] = item;
@@ -56,49 +56,45 @@ int sb_append(strbuf_t *L, char item)
 }
 
 int wordWrap(int width, int fr, int fw){
-    //the buf that will hold the lines that we read from file
-    char *buf;
+    char *buf;                              //String buffer to hold the characters that we read from file
     buf = (char*)malloc(width*sizeof(char));
     int lTrack = 0;
 
     size_t nBytesread;
-    //start reading the file 
-    
     int whileIteration = 0;
     strbuf_t word;
     sb_init(&word, width);
 
-    while((nBytesread = read(fr, buf, width)) != 0){
-        //after buf is loaded with words start wrapping 
+    while((nBytesread = read(fr, buf, width)) > 0){    //Loads buffer with file contents, start wrapping 
         if(DEBUG) printf("While loop iteration: %d\n", whileIteration);
         for(int i = 0; i < width; i++){
             size_t nByteswrite;
-            //when the word is a space it is either the begining or the end of the word 
-            if(buf[i] == '\0' && buf[i - 1] == '\0')
-                break;
-            if(isspace(buf[i]) || buf[i] == '\0'){
-                //if the word list is empty that means it is start so it 
-                if(word.used != 1){
+
+            if(isspace(buf[i]) || buf[i] == '\0'){      //When the character is a space or has reached EOF
+                if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
                     //get the len of the word to write
                     nByteswrite = word.used - 1;
-                    if(width - lTrack < nByteswrite){   //If word doesn't fit on current line
+                    if(width - lTrack < nByteswrite){   //If the word doesn't fit on the current line
                         write(fw, "\n", 1);
                         write(fw, word.data, nByteswrite);
                         lTrack = nByteswrite;
-                        if(DEBUG) printf("Step %d: Wrote to next line %s\n", i, word.data);
+                        if(DEBUG) printf("Step %d: lTrack = %d Wrote to next line %s\n", i, lTrack, word.data);
+
+                        //Free and reinitizalize the word
                         sb_destroy(&word);
                         sb_init(&word, width);
                     }
                     else{
-                        //write the word to the file after end
+                        if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
                         if(lTrack != 0){
                             write(fw, " ", 1);
                             lTrack++;
                         }
                         write(fw, word.data, nByteswrite);
                         lTrack += nByteswrite;
-                        if(DEBUG) printf("Step %d: Wrote to same line %s\n", i, word.data);
-                        //free the word once ended
+                        if(DEBUG) printf("Step %d: lTrack = %d Wrote to same line %s\n", i, lTrack, word.data);
+
+                        //Free and reinitizalize the word
                         sb_destroy(&word);
                         sb_init(&word, width);
                     }
@@ -116,7 +112,13 @@ int wordWrap(int width, int fr, int fw){
                 if(DEBUG) printf("Step %d: Appended %c\n", i, buf[i]);
             }
             
+            if(buf[i] == '\0')    //Passed EOF, break out of loop
+                break;
+            
         }
+        free(buf);
+        buf = (char*)malloc(width*sizeof(char));
+
         whileIteration++;
     }
     
@@ -128,6 +130,6 @@ int wordWrap(int width, int fr, int fw){
 int main(int argc, char argv[]){
     int fr = open("readTesting.txt", O_RDONLY);
     int fw = open("writeTesting.txt", O_WRONLY);
-    wordWrap(10, fr, fw);
+    wordWrap(30, fr, fw);
 
 }
