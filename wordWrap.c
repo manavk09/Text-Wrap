@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #ifndef DEBUG
 #define DEBUG 1
@@ -170,10 +171,30 @@ int wordWrap(int width, int fr, int fw){
     return 1;
 
 }
+int directoryAccess(char dirName, int width){
+    DIR *dir;
+    dir = opendir(dirName);
+    if(dir == NULL){
+        return EXIT_FAILURE;
+    }
+    struct dirent *sd;
+
+    //start reading the dir
+    while((sd = readdir (dir)) != NULL){
+        int fr = open(sd->d_name, O_RDONLY);
+        //create the file name
+        char *name = sd->d_name;
+        char temp[100];
+        strcat(temp,"wrap.");
+        strcat(temp,name);
+        int fw = open(temp, O_WRONLY, O_CREAT);
+        wordWrap(width, fr, fw);
+    }
+    closedir(dir);
+}
 
 int main(int argc, char argv[]){
     int fr = open("readTesting.txt", O_RDONLY);
     int fw = open("writeTesting.txt", O_WRONLY);
     wordWrap(30, fr, fw);
-
 }
