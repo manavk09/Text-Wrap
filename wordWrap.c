@@ -9,6 +9,7 @@
 
 #ifndef DEBUG
 #define DEBUG 1
+#define BUF_SIZE 1
 #endif
 
 typedef struct {
@@ -57,27 +58,31 @@ int sb_append(strbuf_t *L, char item)
 
 int wordWrap(int width, int fr, int fw){
     char *buf;                              //String buffer to hold the characters that we read from file
-    buf = (char*)malloc(width*sizeof(char));
+    buf = (char*)malloc(BUF_SIZE*sizeof(char));
     int lTrack = 0;
 
     size_t nBytesread;
-    int whileIteration = 0;
     strbuf_t word;
+    size_t nByteswrite;
     sb_init(&word, width);
 
-    while((nBytesread = read(fr, buf, width)) > 0){    //Loads buffer with file contents, start wrapping 
+    int whileIteration = 0; //For debugging
+
+    while((nBytesread = read(fr, buf, BUF_SIZE)) > 0){    //Loads buffer with file contents, start wrapping 
+
         if(DEBUG) printf("While loop iteration: %d\n", whileIteration);
-        for(int i = 0; i < width; i++){
-            size_t nByteswrite;
+
+        for(int i = 0; i < BUF_SIZE; i++){
 
             if(isspace(buf[i]) || buf[i] == '\0'){      //When the character is a space or has reached EOF
                 if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
                     //get the len of the word to write
                     nByteswrite = word.used - 1;
-                    if(width - lTrack < nByteswrite){   //If the word doesn't fit on the current line
+                    if(width - lTrack < nByteswrite + 1){   //If the word doesn't fit on the current line
                         write(fw, "\n", 1);
                         write(fw, word.data, nByteswrite);
                         lTrack = nByteswrite;
+
                         if(DEBUG) printf("Step %d: lTrack = %d Wrote to next line %s\n", i, lTrack, word.data);
 
                         //Free and reinitizalize the word
@@ -85,13 +90,16 @@ int wordWrap(int width, int fr, int fw){
                         sb_init(&word, width);
                     }
                     else{
-                        if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
+
+                        if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %ld\n", lTrack, width, nByteswrite);
+
                         if(lTrack != 0){
                             write(fw, " ", 1);
                             lTrack++;
                         }
                         write(fw, word.data, nByteswrite);
                         lTrack += nByteswrite;
+
                         if(DEBUG) printf("Step %d: lTrack = %d Wrote to same line %s\n", i, lTrack, word.data);
 
                         //Free and reinitizalize the word
@@ -109,9 +117,11 @@ int wordWrap(int width, int fr, int fw){
             else{
                 //means the word is in process of making, so keep adding it 
                 sb_append(&word, buf[i]);
+
                 if(DEBUG) printf("Step %d: Appended %c\n", i, buf[i]);
+
             }
-            
+
             if(buf[i] == '\0')    //Passed EOF, break out of loop
                 break;
             
@@ -120,6 +130,40 @@ int wordWrap(int width, int fr, int fw){
         buf = (char*)malloc(width*sizeof(char));
 
         whileIteration++;
+    }
+
+    if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
+        //get the len of the word to write
+        nByteswrite = word.used - 1;
+        if(width - lTrack < nByteswrite){   //If the word doesn't fit on the current line
+            write(fw, "\n", 1);
+            write(fw, word.data, nByteswrite);
+            lTrack = nByteswrite;
+
+            if(DEBUG) printf("Out of while: lTrack = %d Wrote to next line %s\n", lTrack, word.data);
+
+            //Free and reinitizalize the word
+            sb_destroy(&word);
+            sb_init(&word, width);
+        }
+        else{
+
+            if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %ld\n", lTrack, width, nByteswrite);
+
+            if(lTrack != 0){
+                write(fw, " ", 1);
+                lTrack++;
+            }
+            write(fw, word.data, nByteswrite);
+            lTrack += nByteswrite;
+
+            if(DEBUG) printf("Out of while: lTrack = %d Wrote to same line %s\n", lTrack, word.data);
+
+            //Free and reinitizalize the word
+            sb_destroy(&word);
+            sb_init(&word, width);
+        }
+        
     }
     
     free(buf);
