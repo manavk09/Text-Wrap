@@ -1,4 +1,5 @@
 //Authors: Kritik Patel and Manav Kumar
+//NetID: ksp127 and mk1745
 
 #include <stdio.h>
 #include <stdlib.h>
