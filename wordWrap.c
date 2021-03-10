@@ -246,7 +246,6 @@ int directoryAccess(char dirName[], int width){
         //create the file name
         strbuf_t fileNameOut;
         sb_init(&fileNameOut, 5);
-        char *name = sd->d_name;
         char *pre = "wrap.";
         sb_concat(&fileNameOut,prefix);
         sb_concat(&fileNameOut,dirName);
