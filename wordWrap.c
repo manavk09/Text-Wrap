@@ -169,8 +169,7 @@ int wordWrap(int width, int fr, int fw){
     //If we've reached EOF but there is still a word to add
     if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
         if(newLineTick >= 2){               //Make a paragraph is there is one
-            write(fw, "\n", 1);
-            write(fw, "\n", 1);
+            write(fw, "\n\n", 2);
             if(DEBUG) printf("Wrote paragraph at ");
             lTrack = 0;
         }
@@ -217,7 +216,7 @@ int wordWrap(int width, int fr, int fw){
     {
         if(DEBUG) printf("Outside while: Useless space\n");
     }
-    
+    write(fw, "\n", 1);
     free(buf);
     sb_destroy(&word);
 
@@ -252,7 +251,9 @@ int directoryAccess(char dirName[], int width){
     struct dirent *sd;
 
     //start reading the dir
-    while((sd = readdir (dir)) != NULL){
+
+    int loopStop = 0; //DEBUGGING
+    while((sd = readdir (dir)) != NULL && loopStop){
         strbuf_t fileNameIn;
         sb_init(&fileNameIn, 5);
         char *name = sd->d_name;
@@ -282,4 +283,5 @@ int main(int argc, char* argv[]){
     int fr = open("readTesting.txt", O_RDONLY);
     int fw = open("writeTesting.txt", O_WRONLY);
     wordWrap(30, fr, fw);
+
 }
