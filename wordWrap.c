@@ -249,16 +249,16 @@ int directoryAccess(char *dirName, int width){
     struct dirent *entry;
 
     folder = opendir(dirName);
+    
     if(folder == NULL)
     {
         perror("Unable to read directory");
         return(1);
     }
 
-    int loopStop = 0;
-    while( (entry = readdir(folder)) && loopStop < 20)
+    while( (entry = readdir(folder)) )
     {
-        loopStop++;
+        printf("%s\n", entry->d_name);
         if(entry->d_name[0] == '.'){
             continue;
         }
@@ -266,6 +266,7 @@ int directoryAccess(char *dirName, int width){
             continue;
         }
         else{
+            printf("%s\n", entry->d_name);
             if(isdir(entry->d_name) == 2){          //If this is a regular file
                 strbuf_t fileNameIn;
                 sb_init(&fileNameIn, 5);
@@ -286,6 +287,7 @@ int directoryAccess(char *dirName, int width){
                 sb_concat(&fileNameOut, slash);
                 sb_concat(&fileNameOut, pre);
                 sb_concat(&fileNameOut, name);
+                printf("File name out: %s\n", fileNameOut.data);
                 int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 wordWrap(width, fr, fw);
             }
@@ -296,7 +298,8 @@ int directoryAccess(char *dirName, int width){
 }
 
 int main(int argc, char* argv[]){
-    if(argc == 1){
+    
+    if(argc == 1){                                  //No arguments given
         if(DEBUG) printf("No arguments given.\n");
         return EXIT_FAILURE;
     }
@@ -306,6 +309,13 @@ int main(int argc, char* argv[]){
         return EXIT_FAILURE;
     }
 
+    if(argc == 2){                                  //Only width given, read from stdin and write to stdout
+        if(wordWrap(width, 0, 1) == EXIT_SUCCESS)
+            return EXIT_SUCCESS;
+        else
+            return EXIT_FAILURE;
+    }
+
     if(isdir(argv[2]) == 1){                //If the argument is a directory
         directoryAccess(argv[2], width);
     }
@@ -313,11 +323,12 @@ int main(int argc, char* argv[]){
         int fr = open(argv[2], O_RDONLY);
         wordWrap(width, fr, 1);
     }
-    else{
-        if(wordWrap(width, 0, 1) == EXIT_SUCCESS)
-            return EXIT_SUCCESS;
-        else
-            return EXIT_FAILURE;
-    }
-
+    
+    /*
+    if(isdir(argv[1]) == 2)
+        printf("Reg file %s\n", argv[1]);
+    else if(isdir(argv[1]) == 1)
+        printf("Directory %s\n", argv[1]);
+    */
+    
 }
