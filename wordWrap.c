@@ -59,6 +59,13 @@ int sb_append(strbuf_t *L, char item)
 
     return 0;
 }
+int sb_concat(strbuf_t *sb, char *str){
+    int i = 0;
+    while(str[i] != '\0'){
+        sb_append(sb,str[i]);
+        i++;
+    }
+}
 
 int wordWrap(int width, int fr, int fw){
     char *buf;                              //String buffer to hold the characters that we read from file
@@ -220,6 +227,21 @@ int wordWrap(int width, int fr, int fw){
     return 1;
 
 }
+int isdir(char *name) {
+	struct stat data;
+	
+	int err = stat(name, &data);
+	
+	// should confirm err == 0
+	if (err) {
+		return 0;
+	}
+	if (S_ISDIR(data.st_mode)) {
+		return 1;
+	} 
+	
+	return 0;
+}
 
 int directoryAccess(char dirName[], int width){
     DIR *dir;
@@ -231,21 +253,26 @@ int directoryAccess(char dirName[], int width){
 
     //start reading the dir
     while((sd = readdir (dir)) != NULL){
-        char temp1[100];
+        strbuf_t fileNameIn;
+        sb_init(&fileNameIn, 5);
         char *name = sd->d_name;
-        strcat(temp1,"./");
-        strcat(temp1, dirName);
-        strcat(temp1,"/");
-        strcat(temp1,name);
-        int fr = open(temp1, O_RDONLY);
+        char *prefix = "./";
+        char *slash = "/";
+        sb_concat(&fileNameIn,prefix);
+        sb_concat(&fileNameIn,dirName);
+        sb_concat(&fileNameIn,slash);
+        sb_concat(&fileNameIn,name);
+        int fr = open(fileNameIn.data, O_RDONLY);
         //create the file name
-        char temp[100];
-        strcat(temp, "./");
-        strcat(temp, dirName);
-        strcat(temp,"/");
-        strcat(temp,"wrap.");
-        strcat(temp,name);
-        int fw = open(temp, O_WRONLY, O_CREAT);
+        strbuf_t fileNameOut;
+        sb_init(&fileNameOut, 5);
+        char *pre = "wrap.";
+        sb_concat(&fileNameOut,prefix);
+        sb_concat(&fileNameOut,dirName);
+        sb_concat(&fileNameOut,slash);
+        sb_concat(&fileNameOut,pre);
+        sb_concat(&fileNameOut,name);
+        int fw = open(fileNameOut.data, O_WRONLY, O_CREAT);
         wordWrap(width, fr, fw);
     }
     closedir(dir);
