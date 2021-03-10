@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <stdbool.h>
 
 #ifndef DEBUG
 #define DEBUG 1
@@ -62,13 +63,14 @@ int sb_append(strbuf_t *L, char item)
 int wordWrap(int width, int fr, int fw){
     char *buf;                              //String buffer to hold the characters that we read from file
     buf = (char*) calloc(sizeof(char), BUF_SIZE);
-    int lTrack = 0;
 
     size_t nBytesread;
     strbuf_t word;
-    size_t nByteswrite;
+    int nByteswrite;
     sb_init(&word, width);
     int newLineTick = 0;
+    bool isTooBig = false;
+    int lTrack = 0;
 
     int whileIteration = 0; //For debugging
 
@@ -81,15 +83,21 @@ int wordWrap(int width, int fr, int fw){
             if(isspace(buf[i]) || buf[i] == '\0'){      //When the character is a space or has reached EOF
 
                 if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
-                    if(newLineTick >= 2){
+                    if(newLineTick >= 2){               //Make a paragraph is there is one
                         write(fw, "\n", 1);
                         write(fw, "\n", 1);
+                        if(DEBUG) printf("Wrote paragraph at ");
                         lTrack = 0;
                     }
                     newLineTick = 0;
-                    //get the len of the word to write
-                    nByteswrite = word.used - 1;
+
+                    nByteswrite = word.used - 1;        //Bytes of the word to write
+                    
                     if(width - lTrack < nByteswrite + 1){   //If the word doesn't fit on the current line, it will write to the next line
+                        if(nByteswrite > width){    //Word is too big
+                            if(DEBUG) printf("Word is too big at ");
+                            isTooBig = true;
+                        }
                         write(fw, "\n", 1);
                         write(fw, word.data, nByteswrite);
                         lTrack = nByteswrite;
@@ -99,10 +107,11 @@ int wordWrap(int width, int fr, int fw){
                         //Free and reinitizalize the word
                         sb_destroy(&word);
                         sb_init(&word, width);
+                        
                     }
                     else{                               //The word fits and will be written on the same line
 
-                        if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %ld\n", lTrack, width, nByteswrite);
+                        if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
 
                         if(lTrack != 0){
                             write(fw, " ", 1);
@@ -152,28 +161,35 @@ int wordWrap(int width, int fr, int fw){
 
     //If we've reached EOF but there is still a word to add
     if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
-        if(newLineTick >= 2){
+        if(newLineTick >= 2){               //Make a paragraph is there is one
             write(fw, "\n", 1);
             write(fw, "\n", 1);
+            if(DEBUG) printf("Wrote paragraph at ");
             lTrack = 0;
         }
         newLineTick = 0;
-        //get the len of the word to write
-        nByteswrite = word.used - 1;
+
+        nByteswrite = word.used - 1;        //Bytes of the word to write
+        
         if(width - lTrack < nByteswrite + 1){   //If the word doesn't fit on the current line, it will write to the next line
+            if(nByteswrite > width){    //Word is too big
+                if(DEBUG) printf("Word is too big at ");
+                isTooBig = true;
+            }
             write(fw, "\n", 1);
             write(fw, word.data, nByteswrite);
             lTrack = nByteswrite;
 
-            if(DEBUG) printf("Outside of while: lTrack = %d Wrote to next line '%s'\n", lTrack, word.data);
+            if(DEBUG) printf("Outside while: lTrack = %d Wrote to next line '%s'\n", lTrack, word.data);
 
             //Free and reinitizalize the word
             sb_destroy(&word);
             sb_init(&word, width);
+            
         }
         else{                               //The word fits and will be written on the same line
 
-            if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %ld\n", lTrack, width, nByteswrite);
+            if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
 
             if(lTrack != 0){
                 write(fw, " ", 1);
@@ -182,7 +198,7 @@ int wordWrap(int width, int fr, int fw){
             write(fw, word.data, nByteswrite);
             lTrack += nByteswrite;
 
-            if(DEBUG) printf("Outside of while: lTrack = %d Wrote to same line '%s'\n", lTrack, word.data);
+            if(DEBUG) printf("Outside while: lTrack = %d Wrote to same line '%s'\n", lTrack, word.data);
 
             //Free and reinitizalize the word
             sb_destroy(&word);
@@ -192,11 +208,15 @@ int wordWrap(int width, int fr, int fw){
     }
     else
     {
-        if(DEBUG) printf("Outside of while: Useless space\n");
+        if(DEBUG) printf("Outside while: Useless space\n");
     }
     
     free(buf);
     sb_destroy(&word);
+
+    if(isTooBig)
+        return EXIT_FAILURE;
+
     return 1;
 
 }
@@ -231,7 +251,7 @@ int directoryAccess(char dirName[], int width){
     closedir(dir);
 }
 
-int main(int argc, char argv[]){
+int main(int argc, char* argv[]){
     int fr = open("readTesting.txt", O_RDONLY);
     int fw = open("writeTesting.txt", O_WRONLY);
     wordWrap(30, fr, fw);
