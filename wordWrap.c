@@ -13,7 +13,7 @@
 #include <stdbool.h>
 
 #ifndef DEBUG
-#define DEBUG 1
+#define DEBUG 0
 #define BUF_SIZE 30
 #endif
 
@@ -155,7 +155,7 @@ int wordWrap(int width, int fr, int fw){
                 newLineTick++;
             }
 
-            printf("New lines tick: %d\n" , newLineTick);
+            if(DEBUG) printf("New lines tick: %d\n" , newLineTick);
 
             if(buf[i] == '\0')    //Passed EOF, break out of loop
                 break;
@@ -217,6 +217,7 @@ int wordWrap(int width, int fr, int fw){
     {
         if(DEBUG) printf("Outside while: Useless space\n");
     }
+
     write(fw, "\n", 1);
     free(buf);
     sb_destroy(&word);
@@ -224,8 +225,7 @@ int wordWrap(int width, int fr, int fw){
     if(isTooBig)
         return EXIT_FAILURE;
 
-    return 1;
-
+    return EXIT_SUCCESS;
 }
 int isdir(char *name) {
 	struct stat data;
@@ -233,13 +233,15 @@ int isdir(char *name) {
 	int err = stat(name, &data);
 	
 	// should confirm err == 0
-	if (err) {
+	if(err)
 		return 0;
-	}
-	if (S_ISDIR(data.st_mode)) {
+
+	if(S_ISDIR(data.st_mode))
 		return 1;
-	} 
-	
+
+    if(S_ISREG(data.st_mode))
+        return 2;
+    
 	return 0;
 }
 
@@ -254,8 +256,10 @@ int directoryAccess(char *dirName, int width){
         return(1);
     }
 
-    while( (entry=readdir(folder)) )
+    int loopStop = 0;
+    while( (entry = readdir(folder)) && loopStop < 20)
     {
+        loopStop++;
         if(entry->d_name[0] == '.'){
             continue;
         }
@@ -263,27 +267,29 @@ int directoryAccess(char *dirName, int width){
             continue;
         }
         else{
-            strbuf_t fileNameIn;
-            sb_init(&fileNameIn, 5);
-            char *name = entry->d_name;
-            char *prefix = "./";
-            char *slash = "/";
-            sb_concat(&fileNameIn, prefix);
-            sb_concat(&fileNameIn, dirName);
-            sb_concat(&fileNameIn, slash);
-            sb_concat(&fileNameIn, name);
-            int fr = open(fileNameIn.data, O_RDONLY);
-            //create the file name
-            strbuf_t fileNameOut;
-            sb_init(&fileNameOut, 5);
-            char *pre = "wrap.";
-            sb_concat(&fileNameOut, prefix);
-            sb_concat(&fileNameOut, dirName);
-            sb_concat(&fileNameOut, slash);
-            sb_concat(&fileNameOut, pre);
-            sb_concat(&fileNameOut, name);
-            int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-            wordWrap(width, fr, fw);
+            if(isdir(entry->d_name) == 2){          //If this is a regular file
+                strbuf_t fileNameIn;
+                sb_init(&fileNameIn, 5);
+                char *name = entry->d_name;
+                char *prefix = "./";
+                char *slash = "/";
+                sb_concat(&fileNameIn, prefix);
+                sb_concat(&fileNameIn, dirName);
+                sb_concat(&fileNameIn, slash);
+                sb_concat(&fileNameIn, name);
+                int fr = open(fileNameIn.data, O_RDONLY);
+                //create the file name
+                strbuf_t fileNameOut;
+                sb_init(&fileNameOut, 5);
+                char *pre = "wrap.";
+                sb_concat(&fileNameOut, prefix);
+                sb_concat(&fileNameOut, dirName);
+                sb_concat(&fileNameOut, slash);
+                sb_concat(&fileNameOut, pre);
+                sb_concat(&fileNameOut, name);
+                int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                wordWrap(width, fr, fw);
+            }
         }
     }
     closedir(folder);
@@ -291,12 +297,28 @@ int directoryAccess(char *dirName, int width){
 }
 
 int main(int argc, char* argv[]){
-    //nt fr = open("readTesting.txt", O_RDONLY);
-    //int fw = open("writeTesting.txt", O_WRONLY);
-    //wordWrap(30, fr, fw);
-
-    //printf("%s",argv[1]);
-    if(isdir(argv[1])){
-        directoryAccess(argv[1], 20);
+    if(argc == 1){
+        if(DEBUG) printf("No arguments given.\n");
+        return EXIT_FAILURE;
     }
+    int width = atoi(argv[1]);
+    if(width == 0){
+        if(DEBUG) printf("No valid width given.\n");
+        return EXIT_FAILURE;
+    }
+
+    if(isdir(argv[2]) == 1){                //If the argument is a directory
+        directoryAccess(argv[2], width);
+    }
+    else if(isdir(argv[2]) == 2){           //If the argument is a regular file
+        int fr = open(argv[2], O_RDONLY);
+        wordWrap(width, fr, 1);
+    }
+    else{
+        if(wordWrap(width, 0, 1) == EXIT_SUCCESS)
+            return EXIT_SUCCESS;
+        else
+            return EXIT_FAILURE;
+    }
+
 }
