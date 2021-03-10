@@ -242,46 +242,60 @@ int isdir(char *name) {
 	return 0;
 }
 
-int directoryAccess(char dirName[], int width){
-    DIR *dir;
-    dir = opendir(dirName);
-    if(dir == NULL){
-        return EXIT_FAILURE;
-    }
-    struct dirent *sd;
+int directoryAccess(char *dirName, int width){
+    DIR *folder;
+    struct dirent *entry;
 
-    //start reading the dir
-
-    int loopStop = 0; //DEBUGGING
-    while((sd = readdir (dir)) != NULL && loopStop){
-        strbuf_t fileNameIn;
-        sb_init(&fileNameIn, 5);
-        char *name = sd->d_name;
-        char *prefix = "./";
-        char *slash = "/";
-        sb_concat(&fileNameIn,prefix);
-        sb_concat(&fileNameIn,dirName);
-        sb_concat(&fileNameIn,slash);
-        sb_concat(&fileNameIn,name);
-        int fr = open(fileNameIn.data, O_RDONLY);
-        //create the file name
-        strbuf_t fileNameOut;
-        sb_init(&fileNameOut, 5);
-        char *pre = "wrap.";
-        sb_concat(&fileNameOut,prefix);
-        sb_concat(&fileNameOut,dirName);
-        sb_concat(&fileNameOut,slash);
-        sb_concat(&fileNameOut,pre);
-        sb_concat(&fileNameOut,name);
-        int fw = open(fileNameOut.data, O_WRONLY, O_CREAT);
-        wordWrap(width, fr, fw);
+    folder = opendir(dirName);
+    if(folder == NULL)
+    {
+        perror("Unable to read directory");
+        return(1);
     }
-    closedir(dir);
+
+    while( (entry=readdir(folder)) )
+    {
+        if(entry->d_name[0] == '.'){
+            continue;
+        }
+        else if(entry->d_name[0] == 'w' && entry->d_name[1] == 'r' && entry->d_name[2] == 'a' && entry->d_name[3] == 'p' && entry->d_name[4] == '.'){
+            continue;
+        }
+        else{
+            strbuf_t fileNameIn;
+            sb_init(&fileNameIn, 5);
+            char *name = entry->d_name;
+            char *prefix = "./";
+            char *slash = "/";
+            sb_concat(&fileNameIn, prefix);
+            sb_concat(&fileNameIn, dirName);
+            sb_concat(&fileNameIn, slash);
+            sb_concat(&fileNameIn, name);
+            int fr = open(fileNameIn.data, O_RDONLY);
+            //create the file name
+            strbuf_t fileNameOut;
+            sb_init(&fileNameOut, 5);
+            char *pre = "wrap.";
+            sb_concat(&fileNameOut, prefix);
+            sb_concat(&fileNameOut, dirName);
+            sb_concat(&fileNameOut, slash);
+            sb_concat(&fileNameOut, pre);
+            sb_concat(&fileNameOut, name);
+            int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+            wordWrap(width, fr, fw);
+        }
+    }
+    closedir(folder);
+    return(0);  
 }
 
 int main(int argc, char* argv[]){
-    int fr = open("readTesting.txt", O_RDONLY);
-    int fw = open("writeTesting.txt", O_WRONLY);
-    wordWrap(30, fr, fw);
+    //nt fr = open("readTesting.txt", O_RDONLY);
+    //int fw = open("writeTesting.txt", O_WRONLY);
+    //wordWrap(30, fr, fw);
 
+    //printf("%s",argv[1]);
+    if(isdir(argv[1])){
+        directoryAccess(argv[1], 20);
+    }
 }
