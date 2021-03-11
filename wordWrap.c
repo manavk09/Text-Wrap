@@ -14,6 +14,7 @@
 
 #ifndef DEBUG
 #define DEBUG 0
+#define DEBUG_WRAP 0
 #define BUF_SIZE 30
 #endif
 
@@ -74,17 +75,17 @@ int wordWrap(int width, int fr, int fw){
 
     size_t nBytesread;
     strbuf_t word;
-    int nByteswrite;
     sb_init(&word, width);
+    int nByteswrite;
     int newLineTick = 0;
     bool isTooBig = false;
     int lTrack = 0;
 
     int whileIteration = 0; //For debugging
 
-    while((nBytesread = read(fr, buf, BUF_SIZE)) > 0){    //Loads buffer with file contents, start wrapping 
+    while((nBytesread = read(fr, buf, BUF_SIZE)) > 0){    //Load buffer with file contents
 
-        if(DEBUG) printf("While loop iteration %d, buffer contains '%s'\n", whileIteration, buf);
+        if(DEBUG_WRAP) printf("While loop iteration %d, buffer contains '%s'\n", whileIteration, buf);
 
         for(int i = 0; i < BUF_SIZE; i++){
             
@@ -94,7 +95,7 @@ int wordWrap(int width, int fr, int fw){
                     if(newLineTick >= 2){               //Make a paragraph is there is one
                         write(fw, "\n", 1);
                         write(fw, "\n", 1);
-                        if(DEBUG) printf("Wrote paragraph at ");
+                        if(DEBUG_WRAP) printf("Wrote paragraph at ");
                         lTrack = 0;
                     }
                     newLineTick = 0;
@@ -103,14 +104,14 @@ int wordWrap(int width, int fr, int fw){
                     
                     if(width - lTrack < nByteswrite + 1){   //If the word doesn't fit on the current line, it will write to the next line
                         if(nByteswrite > width){    //Word is too big
-                            if(DEBUG) printf("Word is too big at ");
+                            if(DEBUG_WRAP) printf("Word is too big at ");
                             isTooBig = true;
                         }
                         write(fw, "\n", 1);
                         write(fw, word.data, nByteswrite);
                         lTrack = nByteswrite;
 
-                        if(DEBUG) printf("Step %d: lTrack = %d Wrote to next line '%s'\n", i, lTrack, word.data);
+                        if(DEBUG_WRAP) printf("Step %d: lTrack = %d Wrote to next line '%s'\n", i, lTrack, word.data);
 
                         //Free and reinitizalize the word
                         sb_destroy(&word);
@@ -119,7 +120,7 @@ int wordWrap(int width, int fr, int fw){
                     }
                     else{                               //The word fits and will be written on the same line
 
-                        if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
+                        if(DEBUG_WRAP) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
 
                         if(lTrack != 0){
                             write(fw, " ", 1);
@@ -128,7 +129,7 @@ int wordWrap(int width, int fr, int fw){
                         write(fw, word.data, nByteswrite);
                         lTrack += nByteswrite;
 
-                        if(DEBUG) printf("Step %d: lTrack = %d Wrote to same line '%s'\n", i, lTrack, word.data);
+                        if(DEBUG_WRAP) printf("Step %d: lTrack = %d Wrote to same line '%s'\n", i, lTrack, word.data);
 
                         //Free and reinitizalize the word
                         sb_destroy(&word);
@@ -138,7 +139,7 @@ int wordWrap(int width, int fr, int fw){
                 }
                 else
                 {
-                    if(DEBUG) printf("Step %d: Useless space\n", i);
+                    if(DEBUG_WRAP) printf("Step %d: Useless space\n", i);
                 }
                 
             }
@@ -147,7 +148,7 @@ int wordWrap(int width, int fr, int fw){
                 //means the word is in process of making, so keep adding it 
                 sb_append(&word, buf[i]);
 
-                if(DEBUG) printf("Step %d: Appended %c\n", i, buf[i]);
+                if(DEBUG_WRAP) printf("Step %d: Appended %c\n", i, buf[i]);
 
             }
 
@@ -155,7 +156,7 @@ int wordWrap(int width, int fr, int fw){
                 newLineTick++;
             }
 
-            if(DEBUG) printf("New lines tick: %d\n" , newLineTick);
+            if(DEBUG_WRAP) printf("New lines tick: %d\n" , newLineTick);
 
             if(buf[i] == '\0')    //Passed EOF, break out of loop
                 break;
@@ -171,7 +172,7 @@ int wordWrap(int width, int fr, int fw){
     if(word.used != 1){                     //If the word list is not empty, it'll be inserted in the output
         if(newLineTick >= 2){               //Make a paragraph is there is one
             write(fw, "\n\n", 2);
-            if(DEBUG) printf("Wrote paragraph at ");
+            if(DEBUG_WRAP) printf("Wrote paragraph at ");
             lTrack = 0;
         }
         newLineTick = 0;
@@ -180,14 +181,14 @@ int wordWrap(int width, int fr, int fw){
         
         if(width - lTrack < nByteswrite + 1){   //If the word doesn't fit on the current line, it will write to the next line
             if(nByteswrite > width){    //Word is too big
-                if(DEBUG) printf("Word is too big at ");
+                if(DEBUG_WRAP) printf("Word is too big at ");
                 isTooBig = true;
             }
             write(fw, "\n", 1);
             write(fw, word.data, nByteswrite);
             lTrack = nByteswrite;
 
-            if(DEBUG) printf("Outside while: lTrack = %d Wrote to next line '%s'\n", lTrack, word.data);
+            if(DEBUG_WRAP) printf("Outside while: lTrack = %d Wrote to next line '%s'\n", lTrack, word.data);
 
             //Free and reinitizalize the word
             sb_destroy(&word);
@@ -195,9 +196,6 @@ int wordWrap(int width, int fr, int fw){
             
         }
         else{                               //The word fits and will be written on the same line
-
-            if(DEBUG) printf("\nLINE TRACK, WIDTH, BYTESWRITE: %d, %d, %d\n", lTrack, width, nByteswrite);
-
             if(lTrack != 0){
                 write(fw, " ", 1);
                 lTrack++;
@@ -205,7 +203,7 @@ int wordWrap(int width, int fr, int fw){
             write(fw, word.data, nByteswrite);
             lTrack += nByteswrite;
 
-            if(DEBUG) printf("Outside while: lTrack = %d Wrote to same line '%s'\n", lTrack, word.data);
+            if(DEBUG_WRAP) printf("Outside while: lTrack = %d Wrote to same line '%s'\n", lTrack, word.data);
 
             //Free and reinitizalize the word
             sb_destroy(&word);
@@ -215,7 +213,7 @@ int wordWrap(int width, int fr, int fw){
     }
     else
     {
-        if(DEBUG) printf("Outside while: Useless space\n");
+        if(DEBUG_WRAP) printf("Outside while: Useless space\n");
     }
 
     write(fw, "\n", 1);
@@ -231,35 +229,36 @@ int isdir(char *name) {
 	struct stat data;
 	
 	int err = stat(name, &data);
-	
 	// should confirm err == 0
-	if(err)
-		return 0;
+	if(err){
+	    perror("File does not exist or cannot be opened.\n");
+		return EXIT_FAILURE;
+    }
 
 	if(S_ISDIR(data.st_mode))
-		return 1;
+		return 2;
 
     if(S_ISREG(data.st_mode))
-        return 2;
+        return 3;
     
-	return 0;
+	return EXIT_FAILURE;
 }
 
 int directoryAccess(char *dirName, int width){
     DIR *folder;
     struct dirent *entry;
+    int returnStatus = 0;
 
     folder = opendir(dirName);
+    
     if(folder == NULL)
     {
-        perror("Unable to read directory");
-        return(1);
+        perror("Unable to read directory.\n");
+        return(EXIT_FAILURE);
     }
 
-    int loopStop = 0;
-    while( (entry = readdir(folder)) && loopStop < 20)
+    while((entry = readdir(folder)))
     {
-        loopStop++;
         if(entry->d_name[0] == '.'){
             continue;
         }
@@ -267,37 +266,45 @@ int directoryAccess(char *dirName, int width){
             continue;
         }
         else{
-            if(isdir(entry->d_name) == 2){          //If this is a regular file
-                strbuf_t fileNameIn;
-                sb_init(&fileNameIn, 5);
-                char *name = entry->d_name;
-                char *prefix = "./";
-                char *slash = "/";
-                sb_concat(&fileNameIn, prefix);
-                sb_concat(&fileNameIn, dirName);
-                sb_concat(&fileNameIn, slash);
-                sb_concat(&fileNameIn, name);
-                int fr = open(fileNameIn.data, O_RDONLY);
-                //create the file name
-                strbuf_t fileNameOut;
-                sb_init(&fileNameOut, 5);
-                char *pre = "wrap.";
-                sb_concat(&fileNameOut, prefix);
-                sb_concat(&fileNameOut, dirName);
-                sb_concat(&fileNameOut, slash);
-                sb_concat(&fileNameOut, pre);
-                sb_concat(&fileNameOut, name);
+            strbuf_t fileNameIn;
+            sb_init(&fileNameIn, 5);
+            char *name = entry->d_name;
+            char *prefix = "./";
+            char *slash = "/";
+            sb_concat(&fileNameIn, prefix);
+            sb_concat(&fileNameIn, dirName);
+            sb_concat(&fileNameIn, slash);
+            sb_concat(&fileNameIn, name);
+            int fr = open(fileNameIn.data, O_RDONLY);
+            //create the file name
+            strbuf_t fileNameOut;
+            sb_init(&fileNameOut, 5);
+            char *pre = "wrap.";
+            sb_concat(&fileNameOut, prefix);
+            sb_concat(&fileNameOut, dirName);
+            sb_concat(&fileNameOut, slash);
+            sb_concat(&fileNameOut, pre);
+            sb_concat(&fileNameOut, name);
+            if(DEBUG) printf("File name in: %s\n", fileNameIn.data);
+            if(isdir(fileNameIn.data) == 3){
+                if(DEBUG) printf("Creating and writing to %s from %s \n", fileNameOut.data, fileNameIn.data);
                 int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-                wordWrap(width, fr, fw);
+                if(wordWrap(width, fr, fw) == EXIT_FAILURE)
+                    returnStatus = EXIT_FAILURE;
+                else
+                    returnStatus = EXIT_SUCCESS;
             }
+            
+            sb_destroy(&fileNameIn);
+            sb_destroy(&fileNameOut);
         }
     }
     closedir(folder);
-    return(0);  
+    return(returnStatus);
 }
 
 int main(int argc, char* argv[]){
-    if(argc == 1){
+    if(argc == 1){                                  //No arguments given
         if(DEBUG) printf("No arguments given.\n");
         return EXIT_FAILURE;
     }
@@ -306,19 +313,29 @@ int main(int argc, char* argv[]){
         if(DEBUG) printf("No valid width given.\n");
         return EXIT_FAILURE;
     }
-
-    if(isdir(argv[2]) == 1){                //If the argument is a directory
-        directoryAccess(argv[2], width);
-    }
-    else if(isdir(argv[2]) == 2){           //If the argument is a regular file
-        int fr = open(argv[2], O_RDONLY);
-        wordWrap(width, fr, 1);
-    }
-    else{
+    if(argc == 2){                                  //Only width given, read from stdin and write to stdout
+        if(DEBUG) printf("Only given width, will wrap stdin\n");
         if(wordWrap(width, 0, 1) == EXIT_SUCCESS)
             return EXIT_SUCCESS;
         else
             return EXIT_FAILURE;
     }
+    int argType = isdir(argv[2]);
+    if(argType == EXIT_FAILURE)                      //If the argument could not be found or opened
+        return EXIT_FAILURE;
 
+    else if(argType == 2){                //If the argument is a directory
+        if(DEBUG) printf("Arg is directory\n");
+        directoryAccess(argv[2], width);
+    }
+
+    else if(argType == 3){                //If the argument is a regular file
+        if(DEBUG) printf("Arg is file\n");
+        int fr = open(argv[2], O_RDONLY);
+        if(wordWrap(width, fr, 1) == EXIT_SUCCESS)
+            return EXIT_SUCCESS;
+        else
+            return EXIT_FAILURE;
+    }
+    
 }
