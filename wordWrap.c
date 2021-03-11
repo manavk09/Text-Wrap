@@ -319,7 +319,6 @@ int main(int argc, char* argv[]){
         else
             return EXIT_FAILURE;
     }
-
     int argType = isdir(argv[2]);
     if(argType == EXIT_FAILURE)                      //If the argument could not be found or opened
         return EXIT_FAILURE;
