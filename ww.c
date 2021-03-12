@@ -13,7 +13,11 @@
 
 #ifndef DEBUG
 #define DEBUG 0
+#endif
+#ifndef DEBUG_WRAP
 #define DEBUG_WRAP 0
+#endif
+#ifndef BUG_SIZE
 #define BUF_SIZE 30
 #endif
 
@@ -246,7 +250,7 @@ int isdir(char *name) {
 int directoryAccess(char *dirName, int width){
     DIR *folder;
     struct dirent *entry;
-    int returnStatus = 0;
+    int returnStatus = EXIT_SUCCESS;
 
     folder = opendir(dirName);
     
@@ -268,9 +272,7 @@ int directoryAccess(char *dirName, int width){
             strbuf_t fileNameIn;
             sb_init(&fileNameIn, 5);
             char *name = entry->d_name;
-            char *prefix = "./";
             char *slash = "/";
-            sb_concat(&fileNameIn, prefix);
             sb_concat(&fileNameIn, dirName);
             sb_concat(&fileNameIn, slash);
             sb_concat(&fileNameIn, name);
@@ -279,7 +281,6 @@ int directoryAccess(char *dirName, int width){
             strbuf_t fileNameOut;
             sb_init(&fileNameOut, 5);
             char *pre = "wrap.";
-            sb_concat(&fileNameOut, prefix);
             sb_concat(&fileNameOut, dirName);
             sb_concat(&fileNameOut, slash);
             sb_concat(&fileNameOut, pre);
@@ -288,10 +289,11 @@ int directoryAccess(char *dirName, int width){
             if(isdir(fileNameIn.data) == 3){
                 if(DEBUG) printf("Creating and writing to %s from %s \n", fileNameOut.data, fileNameIn.data);
                 int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-                if(wordWrap(width, fr, fw) == EXIT_FAILURE)
-                    returnStatus = EXIT_FAILURE;
+
+                if(returnStatus == 0)
+                    returnStatus = wordWrap(width, fr, fw);
                 else
-                    returnStatus = EXIT_SUCCESS;
+                    wordWrap(width, fr, fw);
             }
             
             sb_destroy(&fileNameIn);
@@ -314,10 +316,7 @@ int main(int argc, char* argv[]){
     }
     if(argc == 2){                                  //Only width given, read from stdin and write to stdout
         if(DEBUG) printf("Only given width, will wrap stdin\n");
-        if(wordWrap(width, 0, 1) == EXIT_SUCCESS)
-            return EXIT_SUCCESS;
-        else
-            return EXIT_FAILURE;
+        return wordWrap(width, 0, 1);
     }
     int argType = isdir(argv[2]);
     if(argType == EXIT_FAILURE)                      //If the argument could not be found or opened
@@ -325,16 +324,15 @@ int main(int argc, char* argv[]){
 
     else if(argType == 2){                //If the argument is a directory
         if(DEBUG) printf("Arg is directory\n");
-        directoryAccess(argv[2], width);
+        return directoryAccess(argv[2], width);
     }
 
     else if(argType == 3){                //If the argument is a regular file
         if(DEBUG) printf("Arg is file\n");
         int fr = open(argv[2], O_RDONLY);
-        if(wordWrap(width, fr, 1) == EXIT_SUCCESS)
-            return EXIT_SUCCESS;
-        else
-            return EXIT_FAILURE;
+        return wordWrap(width, fr, 1) == EXIT_SUCCESS)
     }
+
+    return EXIT_FAILURE;                   
     
 }
