@@ -1,5 +1,4 @@
 //Authors: Kritik Patel and Manav Kumar
-//NetID: ksp127 and mk1745
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,8 +66,6 @@ int sb_concat(strbuf_t *sb, char *str){
         sb_append(sb,str[i]);
         i++;
     }
-
-    return 0;
 }
 
 int wordWrap(int width, int fr, int fw){
@@ -237,13 +234,11 @@ int isdir(char *name) {
 		return EXIT_FAILURE;
     }
 
-	if(S_ISDIR(data.st_mode)){
+	if(S_ISDIR(data.st_mode))
 		return 2;
-    }
 
-    if(S_ISREG(data.st_mode)){
+    if(S_ISREG(data.st_mode))
         return 3;
-    }
     
 	return EXIT_FAILURE;
 }
@@ -292,7 +287,7 @@ int directoryAccess(char *dirName, int width){
             if(DEBUG) printf("File name in: %s\n", fileNameIn.data);
             if(isdir(fileNameIn.data) == 3){
                 if(DEBUG) printf("Creating and writing to %s from %s \n", fileNameOut.data, fileNameIn.data);
-                int fw = open(fileNameOut.data, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+                int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 if(wordWrap(width, fr, fw) == EXIT_FAILURE)
                     returnStatus = EXIT_FAILURE;
                 else
