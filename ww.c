@@ -292,7 +292,7 @@ int directoryAccess(char *dirName, int width){
             if(DEBUG) printf("File name in: %s\n", fileNameIn.data);
             if(isdir(fileNameIn.data) == 3){
                 if(DEBUG) printf("Creating and writing to %s from %s \n", fileNameOut.data, fileNameIn.data);
-                int fw = open(fileNameOut.data, O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                int fw = open(fileNameOut.data, O_WRONLY|O_CREAT|O_TRUNC, 0600);
                 if(wordWrap(width, fr, fw) == EXIT_FAILURE)
                     returnStatus = EXIT_FAILURE;
                 else
