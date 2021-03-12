@@ -70,6 +70,7 @@ int sb_concat(strbuf_t *sb, char *str){
         sb_append(sb,str[i]);
         i++;
     }
+    return 0;
 }
 
 int wordWrap(int width, int fr, int fw){
@@ -228,9 +229,9 @@ int wordWrap(int width, int fr, int fw){
 
     return EXIT_SUCCESS;
 }
-int isdir(char *name) {
-	struct stat data;
-	
+int isdir(char *name){
+    struct stat data;
+
 	int err = stat(name, &data);
 	// should confirm err == 0
 	if(err){
@@ -238,13 +239,13 @@ int isdir(char *name) {
 		return EXIT_FAILURE;
     }
 
-	if(S_ISDIR(data.st_mode))
-		return 2;
-
+    if(S_ISDIR(data.st_mode))
+        return 2;
+    
     if(S_ISREG(data.st_mode))
         return 3;
     
-	return EXIT_FAILURE;
+    return EXIT_FAILURE;
 }
 
 int directoryAccess(char *dirName, int width){
@@ -318,6 +319,7 @@ int main(int argc, char* argv[]){
         if(DEBUG) printf("Only given width, will wrap stdin\n");
         return wordWrap(width, 0, 1);
     }
+
     int argType = isdir(argv[2]);
     if(argType == EXIT_FAILURE)                      //If the argument could not be found or opened
         return EXIT_FAILURE;
@@ -330,9 +332,8 @@ int main(int argc, char* argv[]){
     else if(argType == 3){                //If the argument is a regular file
         if(DEBUG) printf("Arg is file\n");
         int fr = open(argv[2], O_RDONLY);
-        return wordWrap(width, fr, 1) == EXIT_SUCCESS)
+        return wordWrap(width, fr, 1);
     }
 
-    return EXIT_FAILURE;                   
-    
+    return EXIT_FAILURE;
 }
