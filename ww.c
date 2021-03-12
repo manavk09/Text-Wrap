@@ -76,7 +76,7 @@ int sb_concat(strbuf_t *sb, char *str){
 int wordWrap(int width, int fr, int fw){
     char *buf;                              //String buffer to hold the characters that we read from file
     buf = (char*) calloc(sizeof(char), BUF_SIZE);
-
+    
     size_t nBytesread;
     strbuf_t word;
     sb_init(&word, width);
